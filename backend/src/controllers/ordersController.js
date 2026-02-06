@@ -1,7 +1,24 @@
+const crypto = require('crypto');
 const { ordersStore, products } = require('../data/mockData');
+
+function generateOrderId() {
+  return 'ord_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+}
 
 function listOrders(_req, res) {
   res.json(ordersStore);
+}
+
+function getOrderById(req, res) {
+  const order = ordersStore.find((o) => o.id === req.params.id);
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  const email = req.query.email?.trim();
+  if (email && order.customerEmail.toLowerCase() !== email.toLowerCase()) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  res.json(order);
 }
 
 function createOrder(req, res) {
@@ -22,7 +39,7 @@ function createOrder(req, res) {
   }
 
   const newOrder = {
-    id: `ord${ordersStore.length + 1}`,
+    id: generateOrderId(),
     customerEmail,
     items: orderItems,
     totalAmount: Math.round(totalAmount * 100) / 100,
@@ -35,4 +52,4 @@ function createOrder(req, res) {
   res.status(201).json(newOrder);
 }
 
-module.exports = { listOrders, createOrder };
+module.exports = { listOrders, getOrderById, createOrder };
